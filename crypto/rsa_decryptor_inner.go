@@ -28,11 +28,11 @@ func (d *rsaDecryptor) Encrypt(plainText []byte) (cipherText []byte, err error) 
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, &d.priv.PublicKey, plainText, defaultLabel)
 }
 
-// NewDecryptorToFile :
-func NewDecryptorToFile(filename string) (Decryptor, error) {
+// NewRSAKey :
+func NewRSAKey(filename string) error {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	pemPrivData := x509.MarshalPKCS1PrivateKey(priv)
 	privBlock := &pem.Block{
@@ -41,12 +41,12 @@ func NewDecryptorToFile(filename string) (Decryptor, error) {
 	}
 	privPem, err := os.Create(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer privPem.Close()
 	err = pem.Encode(privPem, privBlock)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	pemPublData := x509.MarshalPKCS1PublicKey(&priv.PublicKey)
 	publBlock := &pem.Block{
@@ -55,20 +55,18 @@ func NewDecryptorToFile(filename string) (Decryptor, error) {
 	}
 	publPem, err := os.Create(filename + ".pub")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer publPem.Close()
 	err = pem.Encode(publPem, publBlock)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &rsaDecryptor{
-		priv: priv,
-	}, nil
+	return nil
 }
 
-// NewRSADecryptorFromFile :
-func NewRSADecryptorFromFile(filename string) (Decryptor, error) {
+// NewRSADecryptor :
+func NewRSADecryptor(filename string) (Decryptor, error) {
 	pemPrivData, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err

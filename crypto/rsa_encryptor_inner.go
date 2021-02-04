@@ -19,8 +19,8 @@ func (e *rsaEncryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, e.publ, dataIn, defaultLabel)
 }
 
-// NewRSAEncryptorFromFile :
-func NewRSAEncryptorFromFile(filename string) (Encryptor, error) {
+// NewRSAEncryptor :
+func NewRSAEncryptor(filename string) (Encryptor, error) {
 	pemPublData, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
