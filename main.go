@@ -12,12 +12,18 @@ import (
 )
 
 func main() {
-	server := storage.NewMemStorage()
-	client, err := storage.NewFileStorage("./data")
+	server, err := storage.NewFileStorage("./server_data")
 	if err != nil {
 		log.Fatal(err)
 	}
-	decryptor := crypto.NewPlainDecryptor()
+	client, err := storage.NewFileStorage("./client_data")
+	if err != nil {
+		log.Fatal(err)
+	}
+	decryptor, err := crypto.NewAESDecryptorToFile("./key")
+	if err != nil {
+		log.Fatal(err)
+	}
 	hasher := crypto.NewHasher()
 	pool := pool.NewPool(decryptor, hasher, server, client)
 	for {
