@@ -2,22 +2,41 @@ package storage
 
 import (
 	"errors"
+	"time"
 )
 
+type fileObject struct {
+	info Info
+	data []byte
+}
+
 type memStorage struct {
-	data map[string][]byte
+	data map[string]fileObject
 }
 
 func (m *memStorage) Read(filename string) (data []byte, err error) {
-	data, ok := m.data[filename]
+	o, ok := m.data[filename]
 	if !ok {
 		return nil, errors.New("File Not Found")
 	}
+	data = o.data
 	return data, nil
+}
+func (m *memStorage) Stat(filename string) (info Info, err error) {
+	o, ok := m.data[filename]
+	if !ok {
+		return Info{}, errors.New("File Not Found")
+	}
+	info = o.info
+	return info, nil
 }
 
 func (m *memStorage) Write(filename string, data []byte) (err error) {
-	m.data[filename] = data
+	o := fileObject{
+		info: Info{Name: filename, ModTime: time.Now()},
+		data: data,
+	}
+	m.data[filename] = o
 	return nil
 }
 
@@ -32,6 +51,6 @@ func (m *memStorage) List() (filenameList []string) {
 // NewMemStorage :
 func NewMemStorage() Storage {
 	return &memStorage{
-		data: make(map[string][]byte),
+		data: make(map[string]fileObject),
 	}
 }

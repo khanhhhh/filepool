@@ -19,6 +19,18 @@ func (f *fileStorage) Read(filename string) (data []byte, err error) {
 	return ioutil.ReadFile(path.Join(f.dir, filename))
 }
 
+func (f *fileStorage) Stat(filename string) (info Info, err error) {
+	osInfo, err := os.Stat(filename)
+	if err != nil {
+		return Info{}, err
+	}
+	info = Info{
+		Name:    filename,
+		ModTime: osInfo.ModTime(),
+	}
+	return info, nil
+}
+
 func (f *fileStorage) Write(filename string, data []byte) (err error) {
 	err = os.MkdirAll(path.Join(f.dir, filepath.Dir(filename)), defaultMode)
 	if err != nil {
