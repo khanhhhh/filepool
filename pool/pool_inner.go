@@ -6,28 +6,45 @@ import (
 )
 
 type pool struct {
-	decryptor  crypto.Decryptor
-	server     storage.Storage
-	clientList []storage.Storage
+	hasher    crypto.Hasher
+	decryptor crypto.Decryptor
+	server    storage.Storage
+	client    storage.Storage
 }
 
 func (p *pool) Upload() {
-	for _, client := range p.clientList {
-		sync(p.decryptor, client, []storage.Storage{p.server})
-	}
+	sync(p.decryptor, p.hasher, p.client, p.server)
 }
 func (p *pool) Download() {
-	sync(p.decryptor, p.server, p.clientList)
+	sync(p.decryptor, p.hasher, p.server, p.client)
 }
 
-func sync(decryptor crypto.Decryptor, fromStorage storage.Storage, toStorageList []storage.Storage) {
+func toHashFile(filename string) string {
+	return filename + ".hash"
+}
+
+func isHashFile(filename string) bool {
+	return len(filename) >= 5 && filename[len(filename)-5:] == ".hash"
+}
+
+func sameHash(hash1 []byte, hash2 []byte) bool {
+	if len(hash1) != len(hash2) {
+		return false
+	}
+	for i := 0; i < len(hash1); i++ {
+		if hash1[i] != hash2[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func sync(decryptor crypto.Decryptor, hasher crypto.Hasher, fromStorage storage.Storage, toStorage storage.Storage) {
 	for _, filename := range fromStorage.List() {
-		fromStat, err := fromStorage.Stat(filename)
-		if err != nil {
-			// skip if read error
+		if isHashFile(filename) {
+			// skip hash file
 			continue
 		}
-		// otherwise, write
 		cipherText, err := fromStorage.Read(filename)
 		if err != nil {
 			// skip if read error
@@ -38,10 +55,17 @@ func sync(decryptor crypto.Decryptor, fromStorage storage.Storage, toStorageList
 			// decrypt error
 			continue
 		}
-		for _, toStorage := range toStorageList {
-			toStat, err := toStorage.Stat(filename)
-			if err == nil && toStat.ModTime == fromStat.ModTime {
-				// skip if same mod time
+		wantHashText := hasher.Hash(plainText)
+		if storedWantHashText, err := fromStorage.Read(toHashFile(filename)); err != nil || !sameHash(wantHashText, storedWantHashText) {
+			err = fromStorage.Write(toHashFile(filename), wantHashText)
+			if err != nil {
+				continue
+			}
+		}
+		if gotHashText, err := toStorage.Read(toHashFile(filename)); err != nil || !sameHash(wantHashText, gotHashText) {
+			err = toStorage.Write(toHashFile(filename), wantHashText)
+			if err != nil {
+				// write error
 				continue
 			}
 			err = toStorage.Write(filename, plainText)
@@ -54,10 +78,11 @@ func sync(decryptor crypto.Decryptor, fromStorage storage.Storage, toStorageList
 }
 
 // NewPool :
-func NewPool(decryptor crypto.Decryptor, server storage.Storage, clientList []storage.Storage) Pool {
+func NewPool(decryptor crypto.Decryptor, hasher crypto.Hasher, server storage.Storage, client storage.Storage) Pool {
 	return &pool{
-		decryptor:  decryptor,
-		server:     server,
-		clientList: clientList,
+		decryptor: decryptor,
+		hasher:    hasher,
+		server:    server,
+		client:    client,
 	}
 }

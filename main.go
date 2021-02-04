@@ -12,23 +12,14 @@ import (
 )
 
 func main() {
-	client1, err := storage.NewFileStorage("./client1_data")
+	server := storage.NewMemStorage()
+	client, err := storage.NewFileStorage("./data")
 	if err != nil {
 		log.Fatal(err)
 	}
-	client2, err := storage.NewFileStorage("./client2_data")
-	if err != nil {
-		log.Fatal(err)
-	}
-	server, err := storage.NewFileStorage("./server_data")
-	if err != nil {
-		log.Fatal(err)
-	}
-	decryptor, err := crypto.NewAESDecryptorToFile("./key")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pool := pool.NewPool(decryptor, server, []storage.Storage{client1, client2})
+	decryptor := crypto.NewPlainDecryptor()
+	hasher := crypto.NewHasher()
+	pool := pool.NewPool(decryptor, hasher, server, client)
 	for {
 		fmt.Print("Press 'Enter' to refresh!")
 		pool.Upload()
