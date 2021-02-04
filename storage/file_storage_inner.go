@@ -50,9 +50,36 @@ func (f *fileStorage) List() (filenameList []string) {
 	return filenameList
 }
 
+func (f *fileStorage) Delete(filename string) {
+	var delFile func(filename string)
+	delFile = func(filename string) {
+		if filename == f.dir {
+			return
+		}
+		err := os.Remove(filename)
+		if err != nil {
+			return
+		}
+		// remove all empty directory
+		dir := filepath.Dir(filename)
+		dirInfo, err := ioutil.ReadDir(dir)
+		if err != nil {
+			return
+		}
+		if len(dirInfo) == 0 {
+			delFile(dir)
+		}
+	}
+	delFile(path.Join(f.dir, filename))
+}
+
 // NewFileStorage :
-func NewFileStorage(dir string) Storage {
+func NewFileStorage(dir string) (Storage, error) {
+	err := os.MkdirAll(dir, defaultMode)
+	if err != nil {
+		return nil, err
+	}
 	return &fileStorage{
 		dir: dir,
-	}
+	}, nil
 }

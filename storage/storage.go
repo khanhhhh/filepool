@@ -14,6 +14,7 @@ type Storage interface {
 	Stat(filename string) (info Info, err error)
 	Write(filename string, data []byte) (err error)
 	List() (filenameList []string)
+	Delete(filename string)
 }
 
 // Error :

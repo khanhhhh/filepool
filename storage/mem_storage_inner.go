@@ -48,6 +48,10 @@ func (m *memStorage) List() (filenameList []string) {
 	return filenameList
 }
 
+func (m *memStorage) Delete(filename string) {
+	delete(m.data, filename)
+}
+
 // NewMemStorage :
 func NewMemStorage() Storage {
 	return &memStorage{

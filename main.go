@@ -5,21 +5,31 @@ import (
 	"log"
 
 	"github.com/khanhhhh/filepool/crypto"
+	"github.com/khanhhhh/filepool/pool"
+	"github.com/khanhhhh/filepool/storage"
 )
 
 func main() {
-	d, err := crypto.NewAESDecryptorToFile("./key")
+	client1, err := storage.NewFileStorage("./client1_data")
 	if err != nil {
 		log.Fatal(err)
 	}
-	e, err := crypto.NewAESDecryptorFromFile("./key")
-	cipher, err := d.Encrypt([]byte("haha"))
+	client2, err := storage.NewFileStorage("./client2_data")
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := e.Decrypt(cipher)
+	server, err := storage.NewFileStorage("./server_data")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(out))
+	decryptor, err := crypto.NewAESDecryptorToFile("./key")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pool := pool.NewPool(decryptor, server, []storage.Storage{client1, client2})
+	for {
+		fmt.Print("Press 'Enter' to refresh!")
+		pool.Upload()
+		pool.Download()
+	}
 }

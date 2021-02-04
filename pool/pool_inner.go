@@ -6,66 +6,58 @@ import (
 )
 
 type pool struct {
-	client    storage.Storage
-	server    storage.Storage
-	decryptor crypto.Decryptor
-	hasher    crypto.Hasher
+	decryptor  crypto.Decryptor
+	server     storage.Storage
+	clientList []storage.Storage
 }
 
-func getHashFile(path string) string {
-	return path + ".hash"
-}
-
-func isHashFile(path string) bool {
-	return path[len(path)-5:] == ".hash"
-}
-
-func sameHash(hash1 []byte, hash2 []byte) bool {
-	if len(hash1) != len(hash2) {
-		return false
+func (p *pool) Upload() {
+	for _, client := range p.clientList {
+		sync(p.decryptor, client, []storage.Storage{p.server})
 	}
-	for i := 0; i < len(hash1); i++ {
-		if hash1[i] != hash2[i] {
-			return false
-		}
-	}
-	return true
+}
+func (p *pool) Download() {
+	sync(p.decryptor, p.server, p.clientList)
 }
 
-func (p *pool) sync(fromStorage storage.Storage, toStorage storage.Storage) {
-	toStoragePathSet := make(map[string]struct{})
-	for _, path := range toStorage.List() {
-		toStoragePathSet[path] = struct{}{}
-	}
-	for _, path := range fromStorage.List() {
-		if isHashFile(path) {
-			continue
-		}
-		var data []byte = nil
-		wantHash, err := fromStorage.Read(getHashFile(path))
+func sync(decryptor crypto.Decryptor, fromStorage storage.Storage, toStorageList []storage.Storage) {
+	for _, filename := range fromStorage.List() {
+		fromStat, err := fromStorage.Stat(filename)
 		if err != nil {
-			// write hash to from storage
-			data, err = fromStorage.Read(path)
-			if err != nil {
-				// cannot read file, give up
-				continue
-			}
-			wantHash = p.hasher.Hash(data)
-			fromStorage.Write(getHashFile(path), wantHash)
-		}
-		gotHash, err := toStorage.Read(path)
-		if err == nil && sameHash(gotHash, wantHash) {
+			// skip if read error
 			continue
 		}
-		if data == nil {
-			// load data
-			data, err = fromStorage.Read(path)
+		// otherwise, write
+		cipherText, err := fromStorage.Read(filename)
+		if err != nil {
+			// skip if read error
+			continue
+		}
+		plainText, err := decryptor.Decrypt(cipherText)
+		if err != nil {
+			// decrypt error
+			continue
+		}
+		for _, toStorage := range toStorageList {
+			toStat, err := toStorage.Stat(filename)
+			if err == nil && toStat.ModTime == fromStat.ModTime {
+				// skip if same mod time
+				continue
+			}
+			err = toStorage.Write(filename, plainText)
 			if err != nil {
+				// write error
 				continue
 			}
 		}
-		// write
-		err = toStorage.Write(path, data)
-		// skip error
+	}
+}
+
+// NewPool :
+func NewPool(decryptor crypto.Decryptor, server storage.Storage, clientList []storage.Storage) Pool {
+	return &pool{
+		decryptor:  decryptor,
+		server:     server,
+		clientList: clientList,
 	}
 }
