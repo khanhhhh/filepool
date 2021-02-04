@@ -11,16 +11,16 @@ import (
 	"io/ioutil"
 )
 
-type encryptor struct {
+type rsaEncryptor struct {
 	publ *rsa.PublicKey
 }
 
-func (e *encryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
+func (e *rsaEncryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, e.publ, dataIn, defaultLabel)
 }
 
-// NewEncryptorFromFile :
-func NewEncryptorFromFile(filename string) (Encryptor, error) {
+// NewRSAEncryptorFromFile :
+func NewRSAEncryptorFromFile(filename string) (Encryptor, error) {
 	pemPublData, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func NewEncryptorFromFile(filename string) (Encryptor, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &encryptor{
+	return &rsaEncryptor{
 		publ: publ,
 	}, nil
 }

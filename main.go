@@ -4,15 +4,22 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/khanhhhh/filepool/storage"
+	"github.com/khanhhhh/filepool/crypto"
 )
 
 func main() {
-	s := storage.NewFileStorage("./data")
-	fmt.Println(s.List())
-	err := s.Write("./data/bar/haha.txt", []byte("haha"))
+	d, err := crypto.NewAESDecryptorToFile("./key")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(s.List())
+	e, err := crypto.NewAESDecryptorFromFile("./key")
+	cipher, err := d.Encrypt([]byte("haha"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	out, err := e.Decrypt(cipher)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(out))
 }

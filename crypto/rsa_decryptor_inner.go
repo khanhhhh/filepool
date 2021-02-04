@@ -16,15 +16,15 @@ var (
 	defaultLabel = []byte("label")
 )
 
-type decryptor struct {
+type rsaDecryptor struct {
 	priv *rsa.PrivateKey
 }
 
-func (d *decryptor) Decrypt(dataIn []byte) (dataOut []byte, err error) {
+func (d *rsaDecryptor) Decrypt(dataIn []byte) (dataOut []byte, err error) {
 	return rsa.DecryptOAEP(sha256.New(), rand.Reader, d.priv, dataIn, defaultLabel)
 }
 
-func (d *decryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
+func (d *rsaDecryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, &d.priv.PublicKey, dataIn, defaultLabel)
 }
 
@@ -62,13 +62,13 @@ func NewDecryptorToFile(filename string) (Decryptor, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &decryptor{
+	return &rsaDecryptor{
 		priv: priv,
 	}, nil
 }
 
-// NewDecryptorFromFile :
-func NewDecryptorFromFile(filename string) (Decryptor, error) {
+// NewRSADecryptorFromFile :
+func NewRSADecryptorFromFile(filename string) (Decryptor, error) {
 	pemPrivData, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func NewDecryptorFromFile(filename string) (Decryptor, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &decryptor{
+	return &rsaDecryptor{
 		priv: priv,
 	}, nil
 }
