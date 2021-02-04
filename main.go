@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	decryptor, err := crypto.NewAESDecryptorToFile("./key")
+	decryptor, err := crypto.NewAESDecryptorFromFile("./key")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -13,10 +13,53 @@ type pool struct {
 }
 
 func (p *pool) Upload() {
-	sync(p.decryptor.Encrypt, p.hasher.Hash, p.client, p.server)
+	for _, filename := range p.client.List() {
+		plainText, err := p.client.Read(filename)
+		if err != nil {
+			continue
+		}
+		wantHashText := p.hasher.Hash(plainText)
+		gotHashText, err := p.server.Read(filename)
+		if err == nil && sameHash(wantHashText, gotHashText) {
+			continue
+		}
+		// write
+		cipherText, err := p.decryptor.Encrypt(plainText)
+		if err != nil {
+			continue
+		}
+		err = p.server.Write(toHashFile(filename), wantHashText)
+		err = p.server.Write(filename, cipherText)
+	}
 }
 func (p *pool) Download() {
-	sync(p.decryptor.Decrypt, p.hasher.Hash, p.server, p.client)
+	for _, filename := range p.server.List() {
+		if isHashFile(filename) {
+			// skip hash file
+			continue
+		}
+		wantHashText, err := p.server.Read(toHashFile(filename))
+		if err != nil {
+			continue
+		}
+		gotPlainText, err := p.client.Read(filename)
+		if err == nil {
+			gotHashText := p.hasher.Hash(gotPlainText)
+			if sameHash(wantHashText, gotHashText) {
+				continue
+			}
+		}
+		// write
+		cipherText, err := p.server.Read(filename)
+		if err != nil {
+			continue
+		}
+		plainText, err := p.decryptor.Decrypt(cipherText)
+		if err != nil {
+			continue
+		}
+		err = p.client.Write(filename, plainText)
+	}
 }
 
 func toHashFile(filename string) string {
@@ -37,49 +80,6 @@ func sameHash(hash1 []byte, hash2 []byte) bool {
 		}
 	}
 	return true
-}
-
-func sync(
-	transform func(dataIn []byte) (dataOut []byte, err error),
-	hash func(dataIn []byte) (dataOut []byte),
-	fromStorage storage.Storage,
-	toStorage storage.Storage,
-) {
-	for _, filename := range fromStorage.List() {
-		if isHashFile(filename) {
-			// skip hash file
-			continue
-		}
-		fromText, err := fromStorage.Read(filename)
-		if err != nil {
-			// skip if read error
-			continue
-		}
-		toText, err := transform(fromText)
-		if err != nil {
-			// decrypt error
-			continue
-		}
-		wantHashText := hash(toText)
-		if storedWantHashText, err := fromStorage.Read(toHashFile(filename)); err != nil || !sameHash(wantHashText, storedWantHashText) {
-			err = fromStorage.Write(toHashFile(filename), wantHashText)
-			if err != nil {
-				continue
-			}
-		}
-		if gotHashText, err := toStorage.Read(toHashFile(filename)); err != nil || !sameHash(wantHashText, gotHashText) {
-			err = toStorage.Write(toHashFile(filename), wantHashText)
-			if err != nil {
-				// write error
-				continue
-			}
-			err = toStorage.Write(filename, toText)
-			if err != nil {
-				// write error
-				continue
-			}
-		}
-	}
 }
 
 // NewPool :
