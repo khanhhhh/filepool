@@ -2,6 +2,6 @@ package crypto
 
 // Decryptor :
 type Decryptor interface {
-	Decrypt(dataIn []byte) (dataOut []byte, err error)
-	Encrypt(dataIn []byte) (dataOut []byte, err error)
+	Decrypt(cipherText []byte) (plainText []byte, err error)
+	Encrypt(plainText []byte) (cipherText []byte, err error)
 }

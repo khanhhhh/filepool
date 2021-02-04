@@ -20,12 +20,12 @@ type rsaDecryptor struct {
 	priv *rsa.PrivateKey
 }
 
-func (d *rsaDecryptor) Decrypt(dataIn []byte) (dataOut []byte, err error) {
-	return rsa.DecryptOAEP(sha256.New(), rand.Reader, d.priv, dataIn, defaultLabel)
+func (d *rsaDecryptor) Decrypt(cipherText []byte) (plainText []byte, err error) {
+	return rsa.DecryptOAEP(sha256.New(), rand.Reader, d.priv, cipherText, defaultLabel)
 }
 
-func (d *rsaDecryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
-	return rsa.EncryptOAEP(sha256.New(), rand.Reader, &d.priv.PublicKey, dataIn, defaultLabel)
+func (d *rsaDecryptor) Encrypt(plainText []byte) (cipherText []byte, err error) {
+	return rsa.EncryptOAEP(sha256.New(), rand.Reader, &d.priv.PublicKey, plainText, defaultLabel)
 }
 
 // NewDecryptorToFile :

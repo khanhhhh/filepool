@@ -12,18 +12,18 @@ type aesDecryptor struct {
 	gcm cipher.AEAD
 }
 
-func (d *aesDecryptor) Decrypt(dataIn []byte) (dataOut []byte, err error) {
+func (d *aesDecryptor) Decrypt(cipherText []byte) (plainText []byte, err error) {
 	nonceSize := d.gcm.NonceSize()
-	nonce, ciphertext := dataIn[:nonceSize], dataIn[nonceSize:]
+	nonce, ciphertext := cipherText[:nonceSize], cipherText[nonceSize:]
 	return d.gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-func (d *aesDecryptor) Encrypt(dataIn []byte) (dataOut []byte, err error) {
+func (d *aesDecryptor) Encrypt(plainText []byte) (cipherText []byte, err error) {
 	nonce := make([]byte, d.gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, err
 	}
-	return d.gcm.Seal(nonce, nonce, dataIn, nil), nil
+	return d.gcm.Seal(nonce, nonce, plainText, nil), nil
 }
 
 // NewAESDecryptorToFile :
