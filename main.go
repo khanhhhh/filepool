@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/khanhhhh/filepool/crypto"
 	"github.com/khanhhhh/filepool/pool"
@@ -31,5 +33,6 @@ func main() {
 		fmt.Print("Press 'Enter' to refresh!")
 		pool.Upload()
 		pool.Download()
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
 }
