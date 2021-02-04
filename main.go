@@ -1,25 +1,18 @@
 package main
 
 import (
-	"filepool/crypto"
 	"fmt"
 	"log"
+
+	"github.com/khanhhhh/filepool/storage"
 )
 
 func main() {
-	d, err := crypto.NewDecryptorToFile("./key")
-	e, err := crypto.NewEncryptorFromFile("./key.pub")
+	s := storage.NewFileStorage("./data")
+	fmt.Println(s.List())
+	err := s.Write("./data/bar/haha.txt", []byte("haha"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	cypher, err := e.Encrypt([]byte("haha"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	plain, err := d.Decrypt(cypher)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(string(plain))
-	return
+	fmt.Println(s.List())
 }
