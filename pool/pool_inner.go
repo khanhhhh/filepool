@@ -81,10 +81,12 @@ func (p *pool) Download() {
 		if err != nil {
 			continue
 		}
+		defer cipherTextBuf.Close()
 		plainTextBuf, err := p.client.Write(filename)
 		if err != nil {
 			continue
 		}
+		defer plainTextBuf.Close()
 		_, err = io.Copy(plainTextBuf, crypto.NewTransform(cipherTextBuf, p.decryptor.Decrypt))
 	}
 }

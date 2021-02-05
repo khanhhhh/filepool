@@ -38,9 +38,9 @@ func upload(keyPath string, serverPath string, clientPath string, mode int, crea
 	switch mode {
 	case modeUpload:
 		for {
-			pool.Upload()
 			fmt.Print("Press 'Enter' to upload!")
 			bufio.NewReader(os.Stdin).ReadBytes('\n')
+			pool.Upload()
 		}
 	case modeDownload:
 		pool.Download()
