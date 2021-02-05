@@ -50,7 +50,7 @@ func upload(keyPath string, serverPath string, clientPath string, mode int, crea
 func main() {
 	var keyPath = flag.String("key-path", "./key", "Path to key")
 	var serverPath = flag.String("server-path", "./server_data", "Path to server directory")
-	var clientPath = flag.String("client-path", "./server_data", "Path to client directory")
+	var clientPath = flag.String("client-path", "./client_data", "Path to client directory")
 	var modeStr = flag.String("mode", "upload", "Mode: [upload, download]")
 	var createKey = flag.Bool("create-key", false, "whether create a new key or not")
 	flag.Parse()

@@ -45,7 +45,7 @@ func (t *transform) Read(buffer []byte) (n int, err error) {
 		// transform error
 		return 0, err
 	}
-	t.buffer = append(t.buffer, tbuf[:nn]...)
+	t.buffer = append(t.buffer, tbuf...)
 	return t.Read(buffer)
 }
 

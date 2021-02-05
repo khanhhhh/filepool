@@ -1,7 +1,7 @@
 package pool
 
 import (
-	"bytes"
+	"io"
 	"io/ioutil"
 
 	"github.com/khanhhhh/filepool/crypto"
@@ -22,12 +22,7 @@ func (p *pool) Upload() {
 		if err != nil {
 			continue
 		}
-		wantHashTextBuf := bytes.NewBuffer(nil)
-		err = crypto.TransformStream(p.hasher.Hash, plainTextBuf1, wantHashTextBuf)
-		if err != nil {
-			// cannot hash -> skip
-			continue
-		}
+		wantHashTextBuf := crypto.NewTransform(plainTextBuf1, p.hasher.Hash)
 		wantHashText, err := ioutil.ReadAll(wantHashTextBuf)
 		gotHashTextBuf, err := p.server.Read(filename)
 		if err == nil {
@@ -54,10 +49,7 @@ func (p *pool) Upload() {
 			continue
 		}
 		defer plainTextBuf2.Close()
-		err = crypto.TransformStream(p.decryptor.Encrypt, plainTextBuf2, cipherTextBuf)
-		if err != nil {
-			continue
-		}
+		_, err = io.Copy(cipherTextBuf, crypto.NewTransform(plainTextBuf2, p.decryptor.Encrypt))
 	}
 }
 func (p *pool) Download() {
@@ -93,7 +85,7 @@ func (p *pool) Download() {
 		if err != nil {
 			continue
 		}
-		err = crypto.TransformStream(p.decryptor.Decrypt, cipherTextBuf, plainTextBuf)
+		_, err = io.Copy(plainTextBuf, crypto.NewTransform(cipherTextBuf, p.decryptor.Decrypt))
 	}
 }
 
