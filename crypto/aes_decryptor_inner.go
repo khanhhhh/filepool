@@ -9,11 +9,6 @@ import (
 	"io/ioutil"
 )
 
-const (
-	// each of 256MB of file is encrypted and padded with a nonce (32B) at the beginning
-	chunkSize = 256 * 1024 * 1024 // 256MB
-)
-
 type aesDecryptor struct {
 	decryptor cipher.Stream
 	encryptor cipher.Stream
