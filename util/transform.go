@@ -3,7 +3,7 @@ package util
 import "io"
 
 const (
-	chunkSize = 256 * 1024 * 1024
+	chunkSize = 32 * 1024 // 32kB
 )
 
 type transform struct {
