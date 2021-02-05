@@ -1,6 +1,9 @@
 package pool
 
 import (
+	"bytes"
+	"io/ioutil"
+
 	"github.com/khanhhhh/filepool/crypto"
 	"github.com/khanhhhh/filepool/storage"
 )
@@ -14,22 +17,47 @@ type pool struct {
 
 func (p *pool) Upload() {
 	for _, filename := range p.client.List() {
-		plainText, err := p.client.Read(filename)
+		plainTextBuf1, err := p.client.Read(filename)
+		defer plainTextBuf1.Close()
 		if err != nil {
 			continue
 		}
-		wantHashText := p.hasher.Hash(plainText)
-		gotHashText, err := p.server.Read(filename)
-		if err == nil && sameHash(wantHashText, gotHashText) {
+		wantHashTextBuf := bytes.NewBuffer(nil)
+		err = crypto.TransformStream(p.hasher.Hash, plainTextBuf1, wantHashTextBuf)
+		if err != nil {
+			// cannot hash -> skip
 			continue
+		}
+		wantHashText, err := ioutil.ReadAll(wantHashTextBuf)
+		gotHashTextBuf, err := p.server.Read(filename)
+		if err == nil {
+			defer gotHashTextBuf.Close()
+			gotHashText, err := ioutil.ReadAll(gotHashTextBuf)
+			if err == nil && sameHash(wantHashText, gotHashText) {
+				continue
+			}
 		}
 		// write
-		cipherText, err := p.decryptor.Encrypt(plainText)
+		writeHashTextBuf, err := p.server.Write(toHashFile(filename))
 		if err != nil {
 			continue
 		}
-		err = p.server.Write(toHashFile(filename), wantHashText)
-		err = p.server.Write(filename, cipherText)
+		defer writeHashTextBuf.Close()
+		writeHashTextBuf.Write(wantHashText)
+		cipherTextBuf, err := p.server.Write(filename)
+		if err != nil {
+			continue
+		}
+		defer cipherTextBuf.Close()
+		plainTextBuf2, err := p.client.Read(filename)
+		if err != nil {
+			continue
+		}
+		defer plainTextBuf2.Close()
+		err = crypto.TransformStream(p.decryptor.Encrypt, plainTextBuf2, cipherTextBuf)
+		if err != nil {
+			continue
+		}
 	}
 }
 func (p *pool) Download() {
@@ -38,27 +66,34 @@ func (p *pool) Download() {
 			// skip hash file
 			continue
 		}
-		wantHashText, err := p.server.Read(toHashFile(filename))
+		wantHashTextBuf, err := p.server.Read(toHashFile(filename))
 		if err != nil {
 			continue
 		}
-		gotPlainText, err := p.client.Read(filename)
+		wantHashText, err := ioutil.ReadAll(wantHashTextBuf)
+		if err != nil {
+			continue
+		}
+		gotPlainTextBuf, err := p.client.Read(filename)
 		if err == nil {
-			gotHashText := p.hasher.Hash(gotPlainText)
-			if sameHash(wantHashText, gotHashText) {
-				continue
+			gotPlainText, err := ioutil.ReadAll(gotPlainTextBuf)
+			if err == nil {
+				gotHashText, err := p.hasher.Hash(gotPlainText)
+				if err == nil && sameHash(wantHashText, gotHashText) {
+					continue
+				}
 			}
 		}
 		// write
-		cipherText, err := p.server.Read(filename)
+		cipherTextBuf, err := p.server.Read(filename)
 		if err != nil {
 			continue
 		}
-		plainText, err := p.decryptor.Decrypt(cipherText)
+		plainTextBuf, err := p.client.Write(filename)
 		if err != nil {
 			continue
 		}
-		err = p.client.Write(filename, plainText)
+		err = crypto.TransformStream(p.decryptor.Decrypt, cipherTextBuf, plainTextBuf)
 	}
 }
 

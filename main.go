@@ -11,7 +11,7 @@ import (
 	"github.com/khanhhhh/filepool/storage"
 )
 
-func main() {
+func run() {
 	server, err := storage.NewFileStorage("./server_data")
 	if err != nil {
 		log.Fatal(err)
@@ -20,17 +20,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	crypto.NewAESKey("./key")
-	decryptor, err := crypto.NewAESDecryptor("./key")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// crypto.NewAESKey("./key")
+	// decryptor, err := crypto.NewAESDecryptor("./key")
+	// if err != nil {
+	// 	log.Fatal(err)
+	//}
+	decryptor := crypto.NewPlainDecryptor()
 	hasher := crypto.NewHasher()
 	pool := pool.NewPool(decryptor, hasher, server, client)
 	for {
-		fmt.Print("Press 'Enter' to refresh!")
 		pool.Upload()
 		pool.Download()
+		fmt.Print("Press 'Enter' to refresh!")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
+}
+
+func main() {
+	run()
 }

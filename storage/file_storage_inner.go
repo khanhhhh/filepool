@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -15,16 +16,13 @@ type fileStorage struct {
 	dir string
 }
 
-func (f *fileStorage) Read(filename string) (data []byte, err error) {
-	return ioutil.ReadFile(path.Join(f.dir, filename))
+func (f *fileStorage) Read(filename string) (reader io.ReadCloser, err error) {
+	return os.Open(path.Join(f.dir, filename))
 }
 
-func (f *fileStorage) Write(filename string, data []byte) (err error) {
+func (f *fileStorage) Write(filename string) (writer io.WriteCloser, err error) {
 	err = os.MkdirAll(path.Join(f.dir, filepath.Dir(filename)), defaultMode)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(path.Join(f.dir, filename), data, defaultMode)
+	return os.Create(path.Join(f.dir, filename))
 }
 
 func (f *fileStorage) List() (filenameList []string) {
