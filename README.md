@@ -8,6 +8,4 @@ We currently support AES, RSA, SHA256. Local files, Memory files
 
 # TODO
 
-- Build cmd application
-
 - Integrate google drive, dropbox, hdfs

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +12,12 @@ import (
 	"github.com/khanhhhh/filepool/storage"
 )
 
-func run() {
+const (
+	modeUpload   = 0
+	modeDownload = 1
+)
+
+func upload(keyPath string, serverPath string, clientPath string, mode int, createKey bool) {
 	server, err := storage.NewFileStorage("./server_data")
 	if err != nil {
 		log.Fatal(err)
@@ -21,21 +27,42 @@ func run() {
 		log.Fatal(err)
 	}
 	// crypto.NewAESKey("./key")
-	// decryptor, err := crypto.NewAESDecryptor("./key")
-	// if err != nil {
-	// 	log.Fatal(err)
-	//}
-	decryptor := crypto.NewPlainDecryptor()
+	decryptor, err := crypto.NewAESDecryptor("./key")
+	if err != nil {
+		log.Fatal(err)
+	}
 	hasher := crypto.NewHasher()
 	pool := pool.NewPool(decryptor, hasher, server, client)
-	for {
-		pool.Upload()
+	switch mode {
+	case modeUpload:
+		for {
+			pool.Upload()
+			fmt.Print("Press 'Enter' to upload!")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+		}
+	case modeDownload:
 		pool.Download()
-		fmt.Print("Press 'Enter' to refresh!")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
 }
 
 func main() {
-	run()
+	var keyPath = flag.String("key", "./key", "Path to key")
+	var serverPath = flag.String("server", "./server_data", "Path to server directory")
+	var clientPath = flag.String("client", "./server_data", "Path to client directory")
+	var modeStr = flag.String("mode", "upload", "Mode: [upload, download]")
+	var createKey = flag.Bool("create-key", false, "whether create a new key or not")
+	flag.Parse()
+	modeMap := map[string]int{
+		"upload":   modeUpload,
+		"download": modeDownload,
+	}
+	mode, ok := modeMap[*modeStr]
+	if !ok {
+		log.Fatal("wrong mode")
+	}
+	fmt.Println("mode: ", *modeStr)
+	fmt.Println("key: ", *keyPath)
+	fmt.Println("client: ", *clientPath)
+	fmt.Println("server: ", *serverPath)
+	upload(*keyPath, *serverPath, *clientPath, mode, *createKey)
 }
