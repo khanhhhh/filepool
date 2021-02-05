@@ -6,6 +6,7 @@ import (
 
 	"github.com/khanhhhh/filepool/crypto"
 	"github.com/khanhhhh/filepool/storage"
+	"github.com/khanhhhh/filepool/util"
 )
 
 type pool struct {
@@ -22,7 +23,7 @@ func (p *pool) Upload() {
 		if err != nil {
 			continue
 		}
-		wantHashTextBuf := crypto.NewTransform(plainTextBuf1, p.hasher.Hash)
+		wantHashTextBuf := util.NewTransform(plainTextBuf1, p.hasher.Hash)
 		wantHashText, err := ioutil.ReadAll(wantHashTextBuf)
 		gotHashTextBuf, err := p.server.Read(filename)
 		if err == nil {
@@ -49,7 +50,7 @@ func (p *pool) Upload() {
 			continue
 		}
 		defer plainTextBuf2.Close()
-		_, err = io.Copy(cipherTextBuf, crypto.NewTransform(plainTextBuf2, p.decryptor.Encrypt))
+		_, err = io.Copy(cipherTextBuf, util.NewTransform(plainTextBuf2, p.decryptor.Encrypt))
 	}
 }
 func (p *pool) Download() {
@@ -87,7 +88,7 @@ func (p *pool) Download() {
 			continue
 		}
 		defer plainTextBuf.Close()
-		_, err = io.Copy(plainTextBuf, crypto.NewTransform(cipherTextBuf, p.decryptor.Decrypt))
+		_, err = io.Copy(plainTextBuf, util.NewTransform(cipherTextBuf, p.decryptor.Decrypt))
 	}
 }
 
