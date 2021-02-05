@@ -7,18 +7,12 @@ import (
 
 // Hasher :
 type Hasher interface {
-	Hash(dataIn []byte) (dataOut []byte, err error)
-	HashStream(readerIn io.Reader) (dataOut []byte, err error)
+	Hash(readerIn io.Reader) (dataOut []byte, err error)
 }
 
 type defaultHasher struct{}
 
-func (h *defaultHasher) Hash(dataIn []byte) (dataOut []byte, err error) {
-	hashed := sha256.Sum256(dataIn)
-	return hashed[:], nil
-}
-
-func (h *defaultHasher) HashStream(readerIn io.Reader) ([]byte, error) {
+func (h *defaultHasher) Hash(readerIn io.Reader) ([]byte, error) {
 	hash := sha256.New()
 	_, err := io.Copy(hash, readerIn)
 	if err != nil {

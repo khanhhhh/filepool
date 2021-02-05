@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 
 	"github.com/khanhhhh/filepool/crypto"
 	"github.com/khanhhhh/filepool/pool"
@@ -37,23 +37,24 @@ func upload(keyPath string, serverPath string, clientPath string, mode int, crea
 	pool := pool.NewPool(decryptor, hasher, server, client)
 	switch mode {
 	case modeUpload:
-		for {
-			fmt.Print("Press 'Enter' to upload!")
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-			pool.Upload()
-		}
+		pool.Upload()
 	case modeDownload:
 		pool.Download()
 	}
 }
 
 func main() {
+	var isTest = flag.Bool("test", false, "test")
 	var keyPath = flag.String("key-path", "./key", "Path to key")
 	var serverPath = flag.String("server-path", "./server_data", "Path to server directory")
 	var clientPath = flag.String("client-path", "./client_data", "Path to client directory")
 	var modeStr = flag.String("mode", "upload", "Mode: [upload, download]")
 	var createKey = flag.Bool("create-key", false, "whether create a new key or not")
 	flag.Parse()
+	if *isTest {
+		test()
+		return
+	}
 	modeMap := map[string]int{
 		"upload":   modeUpload,
 		"download": modeDownload,
@@ -68,4 +69,16 @@ func main() {
 	fmt.Println("client-path: ", *clientPath)
 	fmt.Println("create-key: ", *createKey)
 	upload(*keyPath, *serverPath, *clientPath, mode, *createKey)
+}
+
+func test() {
+	aes1, _ := crypto.NewAESDecryptor("./key")
+	aes2, _ := crypto.NewAESDecryptor("./key")
+	dataIn := make([]byte, 1000000000)
+	dataOut, _ := ioutil.ReadAll(aes1.Encrypt(bytes.NewReader(dataIn)))
+	fmt.Println(dataIn[:500])
+	fmt.Println(dataOut[:500])
+	///
+	dataOutOut, _ := ioutil.ReadAll(aes2.Decrypt(bytes.NewReader(dataOut)))
+	fmt.Println(dataOutOut[:500])
 }

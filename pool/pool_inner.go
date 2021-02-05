@@ -1,6 +1,8 @@
 package pool
 
 import (
+	"fmt"
+	"io"
 	"io/ioutil"
 
 	"github.com/khanhhhh/filepool/crypto"
@@ -21,12 +23,15 @@ func (p *pool) Upload() {
 		if err != nil {
 			continue
 		}
-		wantHashText, err := p.hasher.HashStream(plainTextBuf1)
-		gotHashTextBuf, err := p.server.Read(filename)
+		wantHashText, err := p.hasher.Hash(plainTextBuf1)
+		fmt.Println(wantHashText)
+		gotHashTextBuf, err := p.server.Read(toHashFile(filename))
 		if err == nil {
 			defer gotHashTextBuf.Close()
 			gotHashText, err := ioutil.ReadAll(gotHashTextBuf)
+			fmt.Println(gotHashText)
 			if err == nil && sameHash(wantHashText, gotHashText) {
+				fmt.Println("skip upload")
 				continue
 			}
 		}
@@ -47,7 +52,7 @@ func (p *pool) Upload() {
 			continue
 		}
 		defer plainTextBuf2.Close()
-		err = p.decryptor.EncryptStream(plainTextBuf2, cipherTextBuf)
+		_, err = io.Copy(cipherTextBuf, p.decryptor.Encrypt(plainTextBuf2))
 	}
 }
 func (p *pool) Download() {
@@ -66,12 +71,10 @@ func (p *pool) Download() {
 		}
 		gotPlainTextBuf, err := p.client.Read(filename)
 		if err == nil {
-			gotPlainText, err := ioutil.ReadAll(gotPlainTextBuf)
-			if err == nil {
-				gotHashText, err := p.hasher.Hash(gotPlainText)
-				if err == nil && sameHash(wantHashText, gotHashText) {
-					continue
-				}
+			gotHashText, err := p.hasher.Hash(gotPlainTextBuf)
+			if err == nil && sameHash(wantHashText, gotHashText) {
+				fmt.Println("skip download")
+				continue
 			}
 		}
 		// write
@@ -85,7 +88,7 @@ func (p *pool) Download() {
 			continue
 		}
 		defer plainTextBuf.Close()
-		err = p.decryptor.DecryptStream(cipherTextBuf, plainTextBuf)
+		_, err = io.Copy(plainTextBuf, p.decryptor.Decrypt(cipherTextBuf))
 	}
 }
 
