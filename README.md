@@ -8,8 +8,6 @@ We currently support AES, RSA, SHA256. Local files, Memory files
 
 # TODO
 
-- Extend file from []byte -> io.Reader and io.Writer
-
 - Build cmd application
 
 - Integrate google drive, dropbox, hdfs
