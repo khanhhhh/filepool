@@ -40,7 +40,12 @@ func (t *transform) Read(buffer []byte) (n int, err error) {
 		}
 	}
 	// update buffer
-	t.buffer = append(t.buffer, buf[:nn]...)
+	tbuf, err := t.applyChunk(buf[:nn])
+	if err != nil {
+		// transform error
+		return 0, err
+	}
+	t.buffer = append(t.buffer, tbuf[:nn]...)
 	return t.Read(buffer)
 }
 
