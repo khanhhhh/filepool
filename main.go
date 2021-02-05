@@ -46,9 +46,9 @@ func upload(keyPath string, serverPath string, clientPath string, mode int, crea
 }
 
 func main() {
-	var keyPath = flag.String("key", "./key", "Path to key")
-	var serverPath = flag.String("server", "./server_data", "Path to server directory")
-	var clientPath = flag.String("client", "./server_data", "Path to client directory")
+	var keyPath = flag.String("key-path", "./key", "Path to key")
+	var serverPath = flag.String("server-path", "./server_data", "Path to server directory")
+	var clientPath = flag.String("client-path", "./server_data", "Path to client directory")
 	var modeStr = flag.String("mode", "upload", "Mode: [upload, download]")
 	var createKey = flag.Bool("create-key", false, "whether create a new key or not")
 	flag.Parse()
@@ -61,8 +61,9 @@ func main() {
 		log.Fatal("wrong mode")
 	}
 	fmt.Println("mode: ", *modeStr)
-	fmt.Println("key: ", *keyPath)
-	fmt.Println("client: ", *clientPath)
-	fmt.Println("server: ", *serverPath)
+	fmt.Println("key-path: ", *keyPath)
+	fmt.Println("server-path: ", *serverPath)
+	fmt.Println("client-path: ", *clientPath)
+	fmt.Println("create-key: ", *createKey)
 	upload(*keyPath, *serverPath, *clientPath, mode, *createKey)
 }
