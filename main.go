@@ -18,16 +18,18 @@ const (
 )
 
 func upload(keyPath string, serverPath string, clientPath string, mode int, createKey bool) {
-	server, err := storage.NewFileStorage("./server_data")
+	server, err := storage.NewFileStorage(serverPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	client, err := storage.NewFileStorage("./client_data")
+	client, err := storage.NewFileStorage(clientPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// crypto.NewAESKey("./key")
-	decryptor, err := crypto.NewAESDecryptor("./key")
+	if createKey {
+		crypto.NewAESKey(keyPath)
+	}
+	decryptor, err := crypto.NewAESDecryptor(keyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
