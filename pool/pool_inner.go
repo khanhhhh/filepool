@@ -19,40 +19,28 @@ type pool struct {
 func (p *pool) Upload() {
 	for _, filename := range p.client.List() {
 		plainTextBuf1, err := p.client.Read(filename)
-		defer plainTextBuf1.Close()
 		if err != nil {
 			continue
 		}
 		wantHashText, err := p.hasher.Hash(plainTextBuf1)
-		fmt.Println(wantHashText)
+		_ = plainTextBuf1.Close()
 		gotHashTextBuf, err := p.server.Read(toHashFile(filename))
 		if err == nil {
-			defer gotHashTextBuf.Close()
 			gotHashText, err := ioutil.ReadAll(gotHashTextBuf)
-			fmt.Println(gotHashText)
 			if err == nil && sameHash(wantHashText, gotHashText) {
 				fmt.Println("skip upload")
 				continue
 			}
+			_ = gotHashTextBuf.Close()
 		}
 		// write
-		writeHashTextBuf, err := p.server.Write(toHashFile(filename))
-		if err != nil {
-			continue
-		}
-		defer writeHashTextBuf.Close()
-		writeHashTextBuf.Write(wantHashText)
-		cipherTextBuf, err := p.server.Write(filename)
-		if err != nil {
-			continue
-		}
-		defer cipherTextBuf.Close()
-		plainTextBuf2, err := p.client.Read(filename)
-		if err != nil {
-			continue
-		}
-		defer plainTextBuf2.Close()
+		writeHashTextBuf, _ := p.server.Write(toHashFile(filename))
+		_, _ = writeHashTextBuf.Write(wantHashText)
+		_ = writeHashTextBuf.Close()
+		cipherTextBuf, _ := p.server.Write(filename)
+		plainTextBuf2, _ := p.client.Read(filename)
 		_, err = io.Copy(cipherTextBuf, p.decryptor.Encrypt(plainTextBuf2))
+		_ = cipherTextBuf.Close()
 	}
 }
 func (p *pool) Download() {
@@ -78,17 +66,11 @@ func (p *pool) Download() {
 			}
 		}
 		// write
-		cipherTextBuf, err := p.server.Read(filename)
-		if err != nil {
-			continue
-		}
-		defer cipherTextBuf.Close()
+		cipherTextBuf, _ := p.server.Read(filename)
 		plainTextBuf, err := p.client.Write(filename)
-		if err != nil {
-			continue
-		}
-		defer plainTextBuf.Close()
 		_, err = io.Copy(plainTextBuf, p.decryptor.Decrypt(cipherTextBuf))
+		_ = cipherTextBuf.Close()
+		_ = plainTextBuf.Close()
 	}
 }
 

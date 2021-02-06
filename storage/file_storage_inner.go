@@ -37,7 +37,7 @@ func (f *fileStorage) List() (filenameList []string) {
 		}
 		return pathAbsPath[len(dirAbsPath)+1:], nil
 	}
-	filepath.Walk(f.dir, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(f.dir, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}

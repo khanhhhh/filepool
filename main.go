@@ -27,19 +27,22 @@ func upload(keyPath string, serverPath string, clientPath string, mode int, crea
 		log.Fatal(err)
 	}
 	if createKey {
-		crypto.NewAESKey(keyPath)
+		err = crypto.NewAESKey(keyPath)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	decryptor, err := crypto.NewAESDecryptor(keyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	hasher := crypto.NewHasher()
-	pool := pool.NewPool(decryptor, hasher, server, client)
+	p := pool.NewPool(decryptor, hasher, server, client)
 	switch mode {
 	case modeUpload:
-		pool.Upload()
+		p.Upload()
 	case modeDownload:
-		pool.Download()
+		p.Download()
 	}
 }
 
