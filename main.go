@@ -18,24 +18,36 @@ const (
 )
 
 func upload(keyPath string, serverPath string, clientPath string, mode int, createKey bool) {
+	log.Println("Initializing server file storage")
 	server, err := storage.NewFileStorage(serverPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Initializing client file storage")
 	client, err := storage.NewFileStorage(clientPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if createKey {
+		log.Println("Creating new AES key")
 		err = crypto.NewAESKey(keyPath)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	decryptor, err := crypto.NewAESDecryptor(keyPath)
-	if err != nil {
-		log.Fatal(err)
+
+	log.Println("Creating descryptor")
+	var decryptor crypto.Decryptor
+	if len(keyPath) > 0 {
+		log.Println("Reading AES key")
+		decryptor, err = crypto.NewAESDecryptor(keyPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		decryptor = crypto.NewPlainDecryptor()
 	}
+	log.Println("Creating hasher")
 	hasher := crypto.NewHasher()
 	p := pool.NewPool(decryptor, hasher, server, client)
 	switch mode {
@@ -48,7 +60,7 @@ func upload(keyPath string, serverPath string, clientPath string, mode int, crea
 
 func main() {
 	var isTest = flag.Bool("test", false, "test")
-	var keyPath = flag.String("key-path", "./key", "Path to key")
+	var keyPath = flag.String("key-path", "", "Path to key")
 	var serverPath = flag.String("server-path", "./server_data", "Path to server directory")
 	var clientPath = flag.String("client-path", "./client_data", "Path to client directory")
 	var modeStr = flag.String("mode", "upload", "Mode: [upload, download]")
