@@ -4,4 +4,5 @@ package pool
 type Pool interface {
 	Upload()
 	Download()
+	Clean()
 }
