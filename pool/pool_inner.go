@@ -88,12 +88,36 @@ func (p *pool) Download() {
 	}
 }
 
+func (p *pool) Clean() {
+	log.Println("Cleaning")
+	filenameSet := make(map[string]struct{})
+	for _, filename := range p.client.List() {
+		filenameSet[filename] = struct{}{}
+	}
+
+	for _, filename := range p.server.List() {
+		if isHashFile(filename) {
+			// skip hash file
+			continue
+		}
+		if _, ok := filenameSet[filename]; !ok {
+			// delete file
+			log.Println("File not found: ", filename)
+			p.server.Delete(filename)
+		}
+	}
+
+}
+
+const hashExt = ".hash"
+
 func toHashFile(filename string) string {
-	return filename + ".hash"
+	return filename + hashExt
 }
 
 func isHashFile(filename string) bool {
-	return len(filename) >= 5 && filename[len(filename)-5:] == ".hash"
+	hashLen := len(hashExt)
+	return len(filename) >= hashLen && filename[len(filename)-hashLen:] == hashExt
 }
 
 func sameHash(hash1 []byte, hash2 []byte) bool {
